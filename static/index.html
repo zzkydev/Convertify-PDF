@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF Toolkit — Converter & OCR</title>
+  <style>
+    :root { --bg:#0b1020; --card:#121833; --muted:#c9d4f0; --accent:#6ea8fe; }
+    *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Arial}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0c1328);color:#eef2ff;min-height:100vh;display:grid;place-items:center}
+    .wrap{width:min(1000px,94vw);padding:28px}
+    .card{background:rgba(255,255,255,0.04);backdrop-filter: blur(6px);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:28px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    h1{font-size:clamp(24px,3vw,34px);margin:0 0 8px}
+    p.sub{color:#b9c3e0;margin:0 0 18px}
+    .tabs{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 16px}
+    .tab{padding:10px 12px;border:1px solid rgba(255,255,255,.12);border-radius:999px;cursor:pointer;user-select:none}
+    .tab.active{background:var(--accent);color:#0b1020;border-color:transparent}
+    .panel{display:none}
+    .panel.active{display:block}
+    .drop{border:2px dashed rgba(255,255,255,.16);border-radius:18px;display:grid;place-items:center;padding:20px;transition:.2s;background:rgba(255,255,255,.03);margin-top:8px}
+    .drop.drag{border-color: var(--accent); background: rgba(110,168,254,.08)}
+    .drop input{display:none}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#0b1020;border:none;border-radius:12px;padding:10px 14px;font-weight:600;cursor:pointer}
+    .hint{font-size:12px;color:#a7b2cc;margin-top:6px}
+    .progress{height:8px;background:#223052;border-radius:99px;overflow:hidden;margin-top:8px}
+    .bar{height:100%;width:0;background:#6ea8fe;transition:width .2s}
+    .muted{color:#b9c3e0}
+    footer{margin-top:18px;color:#93a0bf;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>PDF Toolkit — <span class="muted">OCR & Konversi</span></h1>
+      <p class="sub">Fitur: OCR PDF, Gabung PDF, PDF→DOCX, PDF→PNG, PNG/JPG→PDF</p>
+
+      <div class="tabs" id="tabs"></div>
+
+      <div id="panels">
+        <!-- OCR PDF -->
+        <section class="panel" data-tab="OCR PDF">
+          <div class="row"><strong>OCR PDF</strong><span class="muted">Buat PDF hasil scan menjadi searchable.</span></div>
+          <div class="row" style="margin-top:6px">
+            <label>Bahasa OCR (mis. <code>eng</code> atau <code>eng+ind</code>):</label>
+            <input id="ocr-lang" placeholder="eng+ind" value="eng+ind"/>
+          </div>
+          <div class="drop" id="drop-ocr"><div style="text-align:center">
+            <p><strong>Tarik & lepas PDF</strong> atau</p>
+            <button class="btn" data-choose="ocr">Pilih PDF</button>
+            <input type="file" accept="application/pdf" data-file="ocr" />
+            <p class="hint">Membutuhkan Tesseract dan Ghostscript terpasang di server.</p>
+          </div></div>
+          <div class="progress"><div class="bar" data-bar="ocr"></div></div>
+          <div class="hint" data-status="ocr">Menunggu unggahan…</div>
+        </section>
+
+        <!-- Merge PDF -->
+        <section class="panel" data-tab="Gabung PDF">
+          <div class="row"><strong>Gabung PDF</strong><span class="muted">Pilih beberapa PDF untuk digabung urut sesuai pilihan.</span></div>
+          <div class="drop" id="drop-merge"><div style="text-align:center">
+            <p><strong>Tarik & lepas beberapa PDF</strong> atau</p>
+            <button class="btn" data-choose="merge">Pilih PDF</button>
+            <input type="file" accept="application/pdf" multiple data-file="merge" />
+          </div></div>
+          <div class="progress"><div class="bar" data-bar="merge"></div></div>
+          <div class="hint" data-status="merge">Menunggu unggahan…</div>
+        </section>
+
+        <!-- PDF to DOCX -->
+        <section class="panel" data-tab="PDF→DOCX">
+          <div class="row"><strong>PDF → DOCX</strong><span class="muted">Konversi PDF ke Word.</span></div>
+          <div class="drop" id="drop-p2d"><div style="text-align:center">
+            <p><strong>Tarik & lepas PDF</strong> atau</p>
+            <button class="btn" data-choose="p2d">Pilih PDF</button>
+            <input type="file" accept="application/pdf" data-file="p2d" />
+          </div></div>
+          <div class="progress"><div class="bar" data-bar="p2d"></div></div>
+          <div class="hint" data-status="p2d">Menunggu unggahan…</div>
+        </section>
+
+        <!-- PDF to PNG -->
+        <section class="panel" data-tab="PDF→PNG">
+          <div class="row"><strong>PDF → PNG</strong><span class="muted">Satu PNG per halaman (ZIP).</span></div>
+          <div class="row" style="margin-top:6px">
+            <label>DPI:</label><input id="pdf2png-dpi" type="number" value="200" min="72" max="600" />
+          </div>
+          <div class="drop" id="drop-pdf2png"><div style="text-align:center">
+            <p><strong>Tarik & lepas PDF</strong> atau</p>
+            <button class="btn" data-choose="pdf2png">Pilih PDF</button>
+            <input type="file" accept="application/pdf" data-file="pdf2png" />
+          </div></div>
+          <div class="progress"><div class="bar" data-bar="pdf2png"></div></div>
+          <div class="hint" data-status="pdf2png">Menunggu unggahan…</div>
+        </section>
+
+        <!-- IMG to PDF -->
+        <section class="panel" data-tab="IMG→PDF">
+          <div class="row"><strong>PNG/JPG → PDF</strong><span class="muted">Gabungkan satu atau banyak gambar jadi satu PDF.</span></div>
+          <div class="drop" id="drop-i2p"><div style="text-align:center">
+            <p><strong>Tarik & lepas gambar</strong> atau</p>
+            <button class="btn" data-choose="i2p">Pilih Gambar</button>
+            <input type="file" accept="image/png,image/jpeg" multiple data-file="i2p" />
+          </div></div>
+          <div class="progress"><div class="bar" data-bar="i2p"></div></div>
+          <div class="hint" data-status="i2p">Menunggu unggahan…</div>
+        </section>
+      </div>
+
+      <footer>
+        <div>Catatan: Untuk OCR, server harus memasang <strong>Tesseract</strong> & <strong>Ghostscript</strong>. Untuk PDF→PNG perlu <strong>Poppler</strong>.</div>
+      </footer>
+    </div>
+  </div>
+
+<script>
+  const TABS = ['OCR PDF','Gabung PDF','PDF→DOCX','PDF→PNG','IMG→PDF'];
+  const tabsEl = document.getElementById('tabs');
+  const panels = [...document.querySelectorAll('.panel')];
+
+  function setTab(name){
+    [...tabsEl.children].forEach(b=>b.classList.toggle('active', b.textContent===name));
+    panels.forEach(p=>p.classList.toggle('active', p.dataset.tab===name));
+  }
+  TABS.forEach((t,i)=>{
+    const b=document.createElement('button'); b.className='tab'+(i?'' : ' active'); b.textContent=t; b.onclick=()=>setTab(t); tabsEl.appendChild(b);
+  });
+  setTab(TABS[0]);
+
+  function wire(endpoint, key, extraForm){
+    const panel = document.querySelector(`.panel[data-tab="${key}"]`);
+    const choose = panel.querySelector('[data-choose]');
+    const fileInput = panel.querySelector('[data-file]');
+    const drop = panel.querySelector('.drop');
+    const bar = panel.querySelector('[data-bar]');
+    const statusEl = panel.querySelector('[data-status]');
+
+    choose.addEventListener('click', ()=> fileInput.click());
+
+    ['dragenter','dragover'].forEach(evt=> drop.addEventListener(evt, e=>{ e.preventDefault(); drop.classList.add('drag'); }));
+    ;['dragleave','drop'].forEach(evt=> drop.addEventListener(evt, e=>{ e.preventDefault(); drop.classList.remove('drag'); }));
+
+    drop.addEventListener('drop', e=>{ const fs=e.dataTransfer.files; if(fs && fs.length) handle(fs); });
+    fileInput.addEventListener('change', ()=>{ if(fileInput.files.length) handle(fileInput.files); });
+
+    function handle(fs){
+      statusEl.textContent='Mengunggah…'; bar.style.width='0%';
+      const form = new FormData();
+      if(extraForm){ extraForm(form); }
+      if(key==='Gabung PDF'){
+        for(const f of fs) form.append('files', f);
+      } else if(key==='IMG→PDF'){
+        for(const f of fs) form.append('files', f);
+      } else {
+        form.append('file', fs[0]);
+      }
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', endpoint, true);
+      xhr.responseType = 'blob';
+      xhr.upload.onprogress = e=>{ if(e.lengthComputable){ bar.style.width=(e.loaded/e.total*100).toFixed(1)+'%'; }};
+      xhr.onload = ()=>{
+        if(xhr.status===200){
+          statusEl.textContent='Selesai. Mengunduh…';
+          const disp = xhr.getResponseHeader('Content-Disposition') || '';
+          const m = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(disp);
+          const name = decodeURIComponent(m?.[1] || m?.[2] || ('result_'+Date.now()));
+          const url = URL.createObjectURL(xhr.response);
+          const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+          statusEl.textContent='Selesai ✔';
+        } else {
+          try{ const reader=new FileReader(); reader.onload=()=>{ try{ alert(JSON.parse(reader.result).error||'Gagal'); }catch{ alert('Gagal'); } }; reader.readAsText(xhr.response);}catch{}
+          statusEl.textContent='Gagal';
+        }
+      };
+      xhr.onerror = ()=>{ statusEl.textContent='Gagal koneksi'; };
+      xhr.send(form);
+    }
+  }
+
+  // Wire tiap panel
+  wire('/api/ocr/pdf','OCR PDF', (form)=>{ form.append('lang', document.getElementById('ocr-lang').value || 'eng'); });
+  wire('/api/merge/pdf','Gabung PDF');
+  wire('/api/convert/pdf-to-docx','PDF→DOCX');
+  wire('/api/convert/pdf-to-png','PDF→PNG', (form)=>{ form.append('dpi', document.getElementById('pdf2png-dpi').value || '200'); });
+  wire('/api/convert/img-to-pdf','IMG→PDF');
+</script>
+</body>
+</html>
+<!-- ```html -->
+<!-- <!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF → DOCX Converter</title>
+  <style>
+    :root { --bg:#0b1020; --card:#121833; --muted:#c9d4f0; --accent:#6ea8fe; }
+    *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Arial}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0c1328);color:#eef2ff;min-height:100vh;display:grid;place-items:center}
+    .wrap{width:min(920px,92vw);padding:28px}
+    .card{background:rgba(255,255,255,0.04);backdrop-filter: blur(6px);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:28px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    h1{font-size:clamp(24px,3vw,34px);margin:0 0 8px}
+    p.sub{color:#b9c3e0;margin:0 0 18px}
+    .drop{border:2px dashed rgba(255,255,255,.16);border-radius:18px;display:grid;place-items:center;padding:28px;transition:.2s;background:rgba(255,255,255,.03)}
+    .drop.drag{border-color: var(--accent); background: rgba(110,168,254,.08)}
+    .drop input{display:none}
+    .btn{display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:#0b1020;border:none;border-radius:12px;padding:12px 16px;font-weight:600;cursor:pointer}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .muted{color:#b9c3e0}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .progress{height:8px;background:#223052;border-radius:99px;overflow:hidden}
+    .bar{height:100%;width:0;background:#6ea8fe;transition:width .2s}
+    .hint{font-size:12px;color:#a7b2cc;margin-top:8px}
+    footer{margin-top:18px;color:#93a0bf;font-size:12px}
+    a{color:#b8d4ff}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Konversi <span class="muted">PDF → DOCX</span></h1>
+      <p class="sub">Unggah file PDF kamu. Kami akan mengubahnya menjadi file Word (.docx).</p>
+
+      <div id="drop" class="drop" tabindex="0">
+        <div style="text-align:center">
+          <p><strong>Tarik & lepas PDF ke sini</strong> atau</p>
+          <button id="choose" class="btn">Pilih File PDF</button>
+          <input id="file" type="file" accept="application/pdf" />
+          <p class="hint">Maksimum 25 MB. File tetap lokal dan dikirim langsung ke server ini untuk diproses.</p>
+        </div>
+      </div>
+
+      <div id="state" style="margin-top:18px;display:none">
+        <div class="row">
+          <div id="filename" class="muted"></div>
+          <div id="size" class="muted"></div>
+        </div>
+        <div class="progress" style="margin-top:10px"><div id="bar" class="bar"></div></div>
+        <div id="status" class="hint">Menunggu unggahan…</div>
+      </div>
+
+      <footer>
+        Tip: Untuk hasil terbaik, gunakan PDF berbasis teks. Untuk PDF hasil scan, pertimbangkan OCR (mis. Tesseract) sebelum konversi.
+      </footer>
+    </div>
+  </div>
+
+<script>
+  const drop = document.getElementById('drop');
+  const fileInput = document.getElementById('file');
+  const chooseBtn = document.getElementById('choose');
+  const bar = document.getElementById('bar');
+  const stateBox = document.getElementById('state');
+  const filename = document.getElementById('filename');
+  const size = document.getElementById('size');
+  const statusEl = document.getElementById('status');
+
+  function formatBytes(bytes){
+    const sizes=['B','KB','MB','GB'];
+    if(bytes===0) return '0 B';
+    const i=Math.floor(Math.log(bytes)/Math.log(1024));
+    return (bytes/Math.pow(1024,i)).toFixed(2)+' '+sizes[i];
+  }
+
+  chooseBtn.addEventListener('click',()=>fileInput.click());
+
+  ['dragenter','dragover'].forEach(evt=>{
+    drop.addEventListener(evt,(e)=>{ e.preventDefault(); e.stopPropagation(); drop.classList.add('drag'); });
+  });
+  ;['dragleave','drop'].forEach(evt=>{
+    drop.addEventListener(evt,(e)=>{ e.preventDefault(); e.stopPropagation(); drop.classList.remove('drag'); });
+  });
+
+  drop.addEventListener('drop', (e)=>{
+    const dt = e.dataTransfer; const files = dt.files;
+    if(files && files[0]) handleFile(files[0]);
+  });
+  fileInput.addEventListener('change',()=>{ if(fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+  function handleFile(f){
+    if(!f.name.toLowerCase().endsWith('.pdf')){ alert('Harap pilih file PDF.'); return; }
+    stateBox.style.display='block';
+    filename.textContent = f.name; size.textContent = ' • ' + formatBytes(f.size);
+    bar.style.width='0%'; statusEl.textContent='Mengunggah…';
+
+    const form = new FormData();
+    form.append('file', f);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/convert', true);
+    xhr.responseType = 'blob';
+
+    xhr.upload.onprogress = (e)=>{
+      if(e.lengthComputable){
+        const pct = (e.loaded/e.total)*100; bar.style.width = pct.toFixed(1)+'%';
+      }
+    };
+
+    xhr.onload = ()=>{
+      if(xhr.status === 200){
+        statusEl.textContent='Konversi selesai. Mengunduh…';
+        const blob = xhr.response;
+        const disp = xhr.getResponseHeader('Content-Disposition') || '';
+        const match = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(disp);
+        const suggested = decodeURIComponent(match?.[1] || match?.[2] || ('converted_'+Date.now()+'.docx'));
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = suggested; document.body.appendChild(a); a.click();
+        a.remove(); window.URL.revokeObjectURL(url);
+        statusEl.textContent='Selesai ✔';
+      } else {
+        try {
+          const reader = new FileReader();
+          reader.onload = ()=>{
+            try{ const err = JSON.parse(reader.result); alert(err.error || 'Terjadi kesalahan.'); }
+            catch{ alert('Terjadi kesalahan.'); }
+          };
+          reader.readAsText(xhr.response);
+        } catch(e){
+          alert('Terjadi kesalahan.');
+        }
+        statusEl.textContent='Gagal';
+      }
+    };
+
+    xhr.onerror = ()=>{ statusEl.textContent='Gagal koneksi'; alert('Gagal koneksi ke server.'); };
+    xhr.send(form);
+  }
+</script>
+</body>
+</html> -->
