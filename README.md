@@ -1,7 +1,6 @@
 # 📄 PDF Toolkit — OCR & Konversi
 
 <div align="center">
-  <img src="./images/logo.png" alt="PDF Toolkit Logo" width="200">
   
   Aplikasi web sederhana berbasis **Flask** untuk mengelola dan mengonversi file PDF maupun gambar.  
   Mendukung berbagai fitur praktis yang dapat digunakan langsung melalui browser.
