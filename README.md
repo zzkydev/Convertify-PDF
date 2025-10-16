@@ -26,7 +26,7 @@
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/zzkydev/Convertify-PDF
+git clone https://github.com/zzkydev/Convertify-PDF.git
 cd Convertify-PDF
 ```
 
